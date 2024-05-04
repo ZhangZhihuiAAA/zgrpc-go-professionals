@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v1"
+	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -16,7 +16,7 @@ type inMemoryDb struct {
 }
 
 // New creates a new instance of inMemoryDb
-func New() db {
+func NewDb() db {
     return &inMemoryDb{}
 }
 

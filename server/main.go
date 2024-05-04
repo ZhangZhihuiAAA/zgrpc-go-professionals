@@ -5,7 +5,7 @@ import (
 	"net"
 	"os"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v1"
+	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
 	"google.golang.org/grpc"
 )
 
@@ -33,7 +33,7 @@ func main() {
     s := grpc.NewServer(opts...)
 
     pb.RegisterTodoServiceServer(s, &server{
-        d: New(),
+        d: NewDb(),
     })
 
     log.Printf("listening at %s\n", addr)

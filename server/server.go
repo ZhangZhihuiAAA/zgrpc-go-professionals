@@ -5,13 +5,36 @@ import (
 	"io"
 	"time"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v1"
+	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
+	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/reflect/protoreflect"
+	"google.golang.org/protobuf/types/known/fieldmaskpb"
+
+	"golang.org/x/exp/slices"
 )
 
 type server struct {
     d db
 
     pb.UnimplementedTodoServiceServer
+}
+
+// Filter applies a mask (FieldMask) to a msg.
+func Filter(msg proto.Message, mask *fieldmaskpb.FieldMask) {
+    if mask == nil || len(mask.Paths) == 0 {
+        return
+    }
+
+    // creates a object to apply reflection on msg
+    rft := msg.ProtoReflect()
+
+    // loop over all the fields in rft
+    rft.Range(func(fd protoreflect.FieldDescriptor, _ protoreflect.Value) bool {
+        if !slices.Contains(mask.Paths, string(fd.Name())) {
+            rft.Clear(fd) // clear all the fields that are not contained in mask
+        }
+        return true
+    })
 }
 
 // AddTask adds a Task to the database.
@@ -27,6 +50,9 @@ func (s *server) AddTask(_ context.Context, in *pb.AddTaskRequest) (*pb.AddTaskR
 func (s *server) ListTasks(req *pb.ListTasksRequest, stream pb.TodoService_ListTasksServer) error {
     return s.d.getTasks(func(t interface{}) error {
         task := t.(*pb.Task)
+
+        Filter(task, req.Mask)
+
         overdue := task.DueDate != nil && !task.Done && task.DueDate.AsTime().Before(time.Now().UTC())
         err := stream.Send(&pb.ListTasksResponse{
             Task:    task,
@@ -53,10 +79,10 @@ func (s *server) UpdateTasks(stream pb.TodoService_UpdateTasksServer) error {
         }
 
         s.d.updateTask(
-            req.Task.Id,
-            req.Task.Description,
-            req.Task.DueDate.AsTime(),
-            req.Task.Done,
+            req.Id,
+            req.Description,
+            req.DueDate.AsTime(),
+            req.Done,
         )
     }
 }

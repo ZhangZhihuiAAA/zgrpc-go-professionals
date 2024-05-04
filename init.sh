@@ -2,7 +2,7 @@ dir=$(dirname $(realpath ${BASH_SOURCE[0]}))
 
 # Create project folders
 mkdir server client proto
-mkdir -p proto/todo/v1
+mkdir -p proto/todo/v1 proto/todo/v2
 
 # Go init server module
 cd $dir/server; go mod init github.com/ZhangZhihuiAAA/zgrpc-go-professionals/server
