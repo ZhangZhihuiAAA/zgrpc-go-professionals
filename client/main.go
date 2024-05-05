@@ -9,11 +9,15 @@ import (
 	"time"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
+	//"google.golang.org/grpc/encoding/gzip"
+
+	pb "zgrpc-go-professionals/pb/todo/v2"
 )
 
 // addTask calls the AddTask unary endpoint with a AddTaskRequest
@@ -25,7 +29,16 @@ func addTask(c pb.TodoServiceClient, description string, dueDate time.Time) uint
     }
     res, err := c.AddTask(context.Background(), req)
     if err != nil {
-        panic(err)
+        if s, ok := status.FromError(err); ok {
+            switch s.Code() {
+            case codes.InvalidArgument, codes.Internal:
+                log.Fatalf("%s: %s", s.Code(), s.Message())
+            default:
+                log.Fatal(s)
+            }
+        } else {
+            panic(err)
+        }
     }
 
     fmt.Printf("added task: %d\n", res.Id)
@@ -35,10 +48,15 @@ func addTask(c pb.TodoServiceClient, description string, dueDate time.Time) uint
 // printTasks calls the ListTasks server streaming endpoint
 // and displays the Tasks on stdout.
 func printTasks(c pb.TodoServiceClient, fm *fieldmaskpb.FieldMask) {
+    // ctx, cancel := context.WithCancel(context.Background())
+    // ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
+    // defer cancel()
+    ctx := context.Background()
+
     req := &pb.ListTasksRequest{
         Mask: fm,
     }
-    stream, err := c.ListTasks(context.Background(), req)
+    stream, err := c.ListTasks(ctx, req)
 
     if err != nil {
         log.Fatalf("unexpected error: %v", err)
@@ -54,6 +72,11 @@ func printTasks(c pb.TodoServiceClient, fm *fieldmaskpb.FieldMask) {
         if err != nil {
             log.Fatalf("unexpected error: %v", err)
         }
+
+        // if res.Overdue {
+        //     log.Printf("CANCEL called")
+        //     cancel()
+        // }
 
         fmt.Println(res.Task.String(), "overdue: ", res.Overdue)
     }
@@ -132,8 +155,19 @@ func main() {
     }
 
     addr := args[0]
+
+    creds, err := credentials.NewClientTLSFromFile("./certs/ca_cert.pem", "x.test.example.com")
+    if err != nil {
+        log.Fatalf("failed to load credentials: %v", err)
+    }
+
     opts := []grpc.DialOption{
-        grpc.WithTransportCredentials(insecure.NewCredentials()),
+        grpc.WithTransportCredentials(creds),
+        //grpc.WithTransportCredentials(insecure.NewCredentials()),
+        grpc.WithUnaryInterceptor(unaryAuthInterceptor),
+        grpc.WithStreamInterceptor(streamAuthInterceptor),
+        //grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
+        grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
     }
     conn, err := grpc.Dial(addr, opts...)
 
@@ -148,7 +182,7 @@ func main() {
     }(conn)
 
     c := pb.NewTodoServiceClient(conn)
-    fm, err := fieldmaskpb.New(&pb.Task{}, "id")
+    fm, err := fieldmaskpb.New(&pb.Task{}, "id", "description", "done", "due_date")
     if err != nil {
         log.Fatalf("unexpected error: %v", err)
     }
@@ -181,5 +215,10 @@ func main() {
     }...)
 
     printTasks(c, fm)
+    fmt.Println("-------------------")
+
+    fmt.Println("-------ERROR-------")
+    // addTask(c, "", dueDate)
+    // addTask(c, "not empty", time.Now().Add(-5*time.Second))
     fmt.Println("-------------------")
 }

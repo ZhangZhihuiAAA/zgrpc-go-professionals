@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"time"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
+	pb "zgrpc-go-professionals/pb/todo/v2"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 

@@ -3,9 +3,13 @@ package main
 import (
 	"context"
 	"io"
+	"log"
 	"time"
 
-	pb "github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto/todo/v2"
+	pb "zgrpc-go-professionals/pb/todo/v2"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/reflect/protoreflect"
 	"google.golang.org/protobuf/types/known/fieldmaskpb"
@@ -25,7 +29,7 @@ func Filter(msg proto.Message, mask *fieldmaskpb.FieldMask) {
         return
     }
 
-    // creates a object to apply reflection on msg
+    // creates an object to apply reflection on msg
     rft := msg.ProtoReflect()
 
     // loop over all the fields in rft
@@ -39,16 +43,56 @@ func Filter(msg proto.Message, mask *fieldmaskpb.FieldMask) {
 
 // AddTask adds a Task to the database.
 // It returns the id of the newly inserted Task or an error.
+// If description is empty or if dueDate is in the past,
+// it will return an InvalidArgument error.
 func (s *server) AddTask(_ context.Context, in *pb.AddTaskRequest) (*pb.AddTaskResponse, error) {
-    id, _ := s.d.addTask(in.Description, in.DueDate.AsTime())
+    if len(in.Description) == 0 {
+        return nil, status.Error(
+            codes.InvalidArgument,
+            "expected a task description, got an empty string",
+        )
+    }
+
+    if in.DueDate.AsTime().Before(time.Now().UTC()) {
+        return nil, status.Error(
+            codes.InvalidArgument,
+            "expected a task due_date that is in the future",
+        )
+    }
+
+    id, err := s.d.addTask(in.Description, in.DueDate.AsTime())
+
+    if err != nil {
+        return nil, status.Errorf(
+            codes.Internal,
+            "unexpected error: %s",
+            err.Error(),
+        )
+    }
 
     return &pb.AddTaskResponse{Id: id}, nil
 }
 
 // ListTasks streams the Tasks present in the database.
 // It optionally returns an error if anything went wrong.
+// It is cancellable and deadline aware.
 func (s *server) ListTasks(req *pb.ListTasksRequest, stream pb.TodoService_ListTasksServer) error {
+    ctx := stream.Context()
+
     return s.d.getTasks(func(t interface{}) error {
+        select {
+        case <-ctx.Done():
+            switch ctx.Err() {
+            case context.Canceled:
+                log.Printf("request canceled: %s", ctx.Err())
+            case context.DeadlineExceeded:
+                log.Printf("request deadline exceeded: %s", ctx.Err())
+            }
+            return ctx.Err()
+        // TODO: replace following case by 'default:' replace by 'default:' on production APIs.
+        case <-time.After(1 * time.Millisecond):
+        }
+
         task := t.(*pb.Task)
 
         Filter(task, req.Mask)
