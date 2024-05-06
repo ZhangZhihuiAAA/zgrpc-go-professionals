@@ -37,7 +37,7 @@ func (d *inMemoryDb) addTask(description string, dueDate time.Time) (uint64, err
 
 // getTasks applies the function f to all the Tasks in the underlying array.
 // If any error happens, it will short circuit and return the error.
-func (d *inMemoryDb) getTasks(f func(interface{}) error) error {
+func (d *inMemoryDb) getTasks(f func(any) error) error {
     for _, task := range d.tasks {
         if err := f(task); err != nil {
             return err

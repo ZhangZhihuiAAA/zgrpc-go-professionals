@@ -46,18 +46,15 @@ func Filter(msg proto.Message, mask *fieldmaskpb.FieldMask) {
 // If description is empty or if dueDate is in the past,
 // it will return an InvalidArgument error.
 func (s *server) AddTask(_ context.Context, in *pb.AddTaskRequest) (*pb.AddTaskResponse, error) {
-    if len(in.Description) == 0 {
-        return nil, status.Error(
-            codes.InvalidArgument,
-            "expected a task description, got an empty string",
-        )
-    }
+    // for testing retry
+    // return nil, status.Errorf(
+    //     codes.Unavailable,
+    //     "unexpected error: %s",
+    //     "unavailable",
+    // )
 
-    if in.DueDate.AsTime().Before(time.Now().UTC()) {
-        return nil, status.Error(
-            codes.InvalidArgument,
-            "expected a task due_date that is in the future",
-        )
+    if err := in.Validate(); err != nil {
+        return nil, err
     }
 
     id, err := s.d.addTask(in.Description, in.DueDate.AsTime())
@@ -79,7 +76,7 @@ func (s *server) AddTask(_ context.Context, in *pb.AddTaskRequest) (*pb.AddTaskR
 func (s *server) ListTasks(req *pb.ListTasksRequest, stream pb.TodoService_ListTasksServer) error {
     ctx := stream.Context()
 
-    return s.d.getTasks(func(t interface{}) error {
+    return s.d.getTasks(func(t any) error {
         select {
         case <-ctx.Done():
             switch ctx.Err() {

@@ -15,66 +15,46 @@ const (
     authTokenValue string = "authd"
 )
 
-// validateAuthToken asserts that the authTokenKey
-// is present and associated with authTokenValue
-// in the current context header.
-func validateAuthToken(ctx context.Context) error {
+// validateAuthToken asserts that the authTokenKey is present and associated 
+// with authTokenValue in the current context header.
+// It returns a context if the auth token is valid, otherwise it returns an error.
+func validateAuthToken(ctx context.Context) (context.Context, error) {
     md, _ := metadata.FromIncomingContext(ctx)
 
     if t, ok := md[authTokenKey]; ok {
         switch {
         case len(t) != 1:
-            return status.Errorf(
+            return nil, status.Errorf(
                 codes.InvalidArgument,
                 "%s should contain only 1 value",
                 authTokenKey,
             )
         case t[0] != authTokenValue:
-            return status.Errorf(
+            return nil, status.Errorf(
                 codes.Unauthenticated,
                 "incorrect %s",
                 authTokenKey,
             )
         }
     } else {
-        return status.Errorf(
+        return nil, status.Errorf(
             codes.Unauthenticated,
             "failed to get %s",
             authTokenKey,
         )
     }
 
-    return nil
-}
-
-// unaryAuthInterceptor calls validateAuthToken to determine wether to
-// continue with the current call or not.
-func unaryAuthInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-    if err := validateAuthToken(ctx); err != nil {
-        return nil, err
-    }
-
-    return handler(ctx, req)
-}
-
-// streamAuthInterceptor calls validateAuthToken to determine wether to
-// continue with the current call or not.
-func streamAuthInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-    if err := validateAuthToken(ss.Context()); err != nil {
-        return err
-    }
-
-    return handler(srv, ss)
+    return ctx, nil
 }
 
 // unaryLogInterceptor logs the endpoints being called.
-func unaryLogInterceptor(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
+func unaryLogInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
     log.Println(info.FullMethod, "called")
     return handler(ctx, req)
 }
 
 // streamLogInterceptor logs the endpoints being called.
-func streamLogInterceptor(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func streamLogInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
     log.Println(info.FullMethod, "called")
     return handler(srv, ss)
 }

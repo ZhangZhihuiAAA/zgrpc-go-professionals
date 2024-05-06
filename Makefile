@@ -5,17 +5,22 @@ protocv1:
 	       --go-grpc_opt=paths=source_relative \
 	       proto/todo/v1/*.proto
 
+importdir=proto
+module=zgrpc-go-professionals/pb
+outdir=pb
 protoc:
-	protoc --go_out=pb \
-	       --go_opt=module=zgrpc-go-professionals/pb \
-	       --go-grpc_out=pb \
-	       --go-grpc_opt=module=zgrpc-go-professionals/pb \
+	protoc --proto_path=$(importdir) \
+	       --go_out=$(outdir) \
+	       --go_opt=module=$(module) \
+	       --go-grpc_out=$(outdir) \
+	       --go-grpc_opt=module=$(module) \
+	       --validate_out="lang=go,module=$(module):$(outdir)" \
 	       proto/todo/v2/*.proto
 
 srvaddr=0.0.0.0:50051
-runserver:
+runs:
 	go run ./server $(srvaddr)
-runclient:
+runc:
 	go run ./client $(srvaddr)
 
 dbuilds:
@@ -41,4 +46,4 @@ kcreatec:
 kdeletec:
 	kind delete cluster
 
-.PHONY: protocv1 protoc runserver runclient dbuilds dbuildc createc deletec
+.PHONY: protocv1 protoc runs runc dbuilds dbuildc createc deletec

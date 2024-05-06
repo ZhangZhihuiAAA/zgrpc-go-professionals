@@ -13,10 +13,13 @@ cd $dir/client; go mod init github.com/ZhangZhihuiAAA/zgrpc-go-professionals/cli
 # Go init proto module
 cd $dir/proto; go mod init github.com/ZhangZhihuiAAA/zgrpc-go-professionals/proto
 
-# Dowload certs
+# Download certs
 # cd $dir/certs
 # curl https://github.com/grpc/grpc-go/tree/master/examples/data/x509/server_cert.pem --output server_cert.pem
 # curl https://github.com/grpc/grpc-go/tree/master/examples/data/x509/server_key.pem --output server_key.pem
 # curl https://github.com/grpc/grpc-go/tree/master/examples/data/x509/ca_cert.pem --output ca_cert.pem
+
+# Download validate.proto
+# cd $dir/proto; mkdir validate; cd validate; curl https://github.com/bufbuild/protoc-gen-validate/blob/main/validate/validate.proto --output validate.proto
 
 cd $dir

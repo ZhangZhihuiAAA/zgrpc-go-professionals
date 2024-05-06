@@ -217,8 +217,8 @@ func main() {
     printTasks(c, fm)
     fmt.Println("-------------------")
 
-    fmt.Println("-------ERROR-------")
+    // fmt.Println("-------ERROR-------")
     // addTask(c, "", dueDate)
     // addTask(c, "not empty", time.Now().Add(-5*time.Second))
-    fmt.Println("-------------------")
+    // fmt.Println("-------------------")
 }
