@@ -48,7 +48,6 @@ WORKDIR /go/src
 COPY go.mod .
 
 # download dependencies and build
-WORKDIR /go/src
 RUN go mod tidy
 WORKDIR /go/src/server
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /go/bin/app

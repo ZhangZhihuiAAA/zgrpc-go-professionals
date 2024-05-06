@@ -6,4 +6,5 @@ spec:
   containers:
   - name: todo-client
     image: zgrpc-go-professionals:client
+    imagePullPolicy: Never
   restartPolicy: Never

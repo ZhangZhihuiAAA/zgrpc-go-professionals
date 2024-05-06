@@ -18,12 +18,27 @@ runserver:
 runclient:
 	go run ./client $(srvaddr)
 
-dbuild:
-	docker build -t zgrpc-go-professionals:server .
+dbuilds:
+	docker build -t zgrpc-go-professionals:server -f server.dockerfile .
 
-create_cluster:
-	kind create cluster --config k8s/kind.yaml
-delete_cluster:
+dbuildc:
+	docker build -t zgrpc-go-professionals:client -f client.dockerfile .
+
+kloads:
+	kind load docker-image zgrpc-go-professionals:server
+
+kloadc:
+	kind load docker-image zgrpc-go-professionals:client
+
+kapplys:
+	kubectl apply -f k8s/server.yaml
+
+kapplyc:
+	kubectl apply -f k8s/client.yaml
+
+kcreatec:
+	kind create cluster --config k8s/kind.yaml -v
+kdeletec:
 	kind delete cluster
 
-.PHONY: protocv1 protoc runserver runclient dbuild_server create_cluster delete_cluster protocm
+.PHONY: protocv1 protoc runserver runclient dbuilds dbuildc createc deletec

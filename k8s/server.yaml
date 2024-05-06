@@ -33,6 +33,7 @@ spec:
       containers:
       - name: todo-server
         image: zgrpc-go-professionals:server
+        imagePullPolicy: Never
         ports:
         - name: grpc
           containerPort: 50051
