@@ -13,6 +13,7 @@ import (
 	//_ "google.golang.org/grpc/encoding/gzip"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
 )
 
 func main() {
@@ -40,10 +41,11 @@ func main() {
         log.Fatalf("failed to create credentials: %v", err)
     }
 
+    logger := log.New(os.Stderr, "", log.Ldate|log.Ltime)
     opts := []grpc.ServerOption{
         grpc.Creds(creds),
-        grpc.ChainUnaryInterceptor(auth.UnaryServerInterceptor(validateAuthToken), unaryLogInterceptor),
-        grpc.ChainStreamInterceptor(auth.StreamServerInterceptor(validateAuthToken), streamLogInterceptor),
+        grpc.ChainUnaryInterceptor(auth.UnaryServerInterceptor(validateAuthToken), logging.UnaryServerInterceptor(logCalls(logger))),
+        grpc.ChainStreamInterceptor(auth.StreamServerInterceptor(validateAuthToken), logging.StreamServerInterceptor(logCalls(logger))),
     }
     s := grpc.NewServer(opts...)
 
