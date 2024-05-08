@@ -18,6 +18,8 @@ import (
 	//"google.golang.org/grpc/encoding/gzip"
 
 	pb "zgrpc-go-professionals/pb/todo/v2"
+
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/retry"
 )
 
 // addTask calls the AddTask unary endpoint with a AddTaskRequest
@@ -161,12 +163,23 @@ func main() {
         log.Fatalf("failed to load credentials: %v", err)
     }
 
+    retryOpts := []retry.CallOption{
+        retry.WithMax(3),
+        retry.WithBackoff(retry.BackoffExponential(100 * time.Millisecond)),
+        retry.WithCodes(codes.Unavailable),
+    }
     opts := []grpc.DialOption{
+        // grpc.WithTransportCredentials(insecure.NewCredentials()),
         grpc.WithTransportCredentials(creds),
-        //grpc.WithTransportCredentials(insecure.NewCredentials()),
-        grpc.WithUnaryInterceptor(unaryAuthInterceptor),
-        grpc.WithStreamInterceptor(streamAuthInterceptor),
-        //grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
+        grpc.WithChainUnaryInterceptor(
+            retry.UnaryClientInterceptor(retryOpts...),
+            unaryAuthInterceptor,
+        ),
+        grpc.WithChainStreamInterceptor(
+            // retry.StreamClientInterceptor(retryOpts...),
+            streamAuthInterceptor,
+        ),
+        // grpc.WithDefaultCallOptions(grpc.UseCompressor(gzip.Name)),
         grpc.WithDefaultServiceConfig(`{"loadBalancingConfig": [{"round_robin":{}}]}`),
     }
     conn, err := grpc.Dial(addr, opts...)
