@@ -18,8 +18,9 @@ protoc:
 	       proto/todo/v2/*.proto
 
 srvaddr=0.0.0.0:50051
+metricsaddr=0.0.0.0:50052
 runs:
-	go run ./server $(srvaddr)
+	go run ./server $(srvaddr) $(metricsaddr)
 runc:
 	go run ./client $(srvaddr)
 
