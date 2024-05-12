@@ -47,4 +47,7 @@ kcreatec:
 kdeletec:
 	kind delete cluster
 
-.PHONY: protocv1 protoc runs runc dbuilds dbuildc createc deletec
+utest:
+	go test -run Test -v -count=1 ./server
+
+.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest

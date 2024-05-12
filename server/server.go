@@ -58,7 +58,6 @@ func (s *server) AddTask(_ context.Context, in *pb.AddTaskRequest) (*pb.AddTaskR
     }
 
     id, err := s.d.addTask(in.Description, in.DueDate.AsTime())
-
     if err != nil {
         return nil, status.Errorf(
             codes.Internal,
@@ -119,12 +118,18 @@ func (s *server) UpdateTasks(stream pb.TodoService_UpdateTasksServer) error {
             return err
         }
 
-        s.d.updateTask(
+        if err := s.d.updateTask(
             req.Id,
             req.Description,
             req.DueDate.AsTime(),
             req.Done,
-        )
+        ); err != nil {
+            return status.Errorf(
+                codes.Internal,
+                "unexpected error: %s",
+                err.Error(),
+            )
+        }
     }
 }
 
@@ -144,7 +149,14 @@ func (s *server) DeleteTasks(stream pb.TodoService_DeleteTasksServer) error {
             return err
         }
 
-        s.d.deleteTask(req.Id)
+        if err := s.d.deleteTask(req.Id); err != nil {
+            return status.Errorf(
+                codes.Internal,
+                "unexpected error: %s",
+                err.Error(),
+            )
+        }
+
         stream.Send(&pb.DeleteTasksResponse{})
     }
 }
