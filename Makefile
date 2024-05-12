@@ -50,4 +50,14 @@ kdeletec:
 utest:
 	go test -run Test -v -count=1 ./server
 
-.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest
+ltest:
+	ghz --proto ./proto/todo/v2/todo.proto \
+	--import-paths=proto \
+	--call todo.v2.TodoService.AddTask \
+	--data '{"description": "task"}' \
+	--cacert ./certs/ca_cert.pem \
+	--cname "check.test.example.com" \
+	--metadata '{"auth_token": "authd"}' \
+	$(srvaddr)
+
+.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest

@@ -13,7 +13,7 @@ import (
 	pb "zgrpc-go-professionals/pb/todo/v2"
 
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/time/rate"
+	// "golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 
@@ -22,7 +22,8 @@ import (
 	grpcprom "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/logging"
-	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
+
+	// "github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/ratelimit"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -47,21 +48,22 @@ func newGrpcServer(srvMetrics *grpcprom.ServerMetrics) (*grpc.Server, error) {
     }
 
     logger := log.New(os.Stderr, "", log.Ldate|log.Ltime)
-    limiter := &simpleLimiter{
-        limiter: rate.NewLimiter(5, 10),
-    }
+    // comment out for load testing
+    // limiter := &simpleLimiter{
+    //     limiter: rate.NewLimiter(5, 10),
+    // }
 
     opts := []grpc.ServerOption{
         grpc.Creds(creds),
         grpc.StatsHandler(otelgrpc.NewServerHandler()),
         grpc.ChainUnaryInterceptor(
-            ratelimit.UnaryServerInterceptor(limiter),
+            // ratelimit.UnaryServerInterceptor(limiter),
             srvMetrics.UnaryServerInterceptor(),
             auth.UnaryServerInterceptor(validateAuthToken),
             logging.UnaryServerInterceptor(logCalls(logger)),
         ),
         grpc.ChainStreamInterceptor(
-            ratelimit.StreamServerInterceptor(limiter),
+            // ratelimit.StreamServerInterceptor(limiter),
             srvMetrics.StreamServerInterceptor(),
             auth.StreamServerInterceptor(validateAuthToken),
             logging.StreamServerInterceptor(logCalls(logger)),
