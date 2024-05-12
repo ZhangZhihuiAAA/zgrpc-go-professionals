@@ -201,6 +201,17 @@ func (m *AddTaskRequest) validate(all bool) error {
 		errors = append(errors, err)
 	}
 
+	if m.GetDueDate() == nil {
+		err := AddTaskRequestValidationError{
+			field:  "DueDate",
+			reason: "value is required",
+		}
+		if !all {
+			return err
+		}
+		errors = append(errors, err)
+	}
+
 	if t := m.GetDueDate(); t != nil {
 		ts, err := t.AsTime(), t.CheckValid()
 		if err != nil {

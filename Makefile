@@ -52,12 +52,26 @@ utest:
 
 ltest:
 	ghz --proto ./proto/todo/v2/todo.proto \
-	--import-paths=proto \
-	--call todo.v2.TodoService.AddTask \
-	--data '{"description": "task"}' \
-	--cacert ./certs/ca_cert.pem \
-	--cname "check.test.example.com" \
-	--metadata '{"auth_token": "authd"}' \
-	$(srvaddr)
+	    --import-paths=proto \
+	    --call todo.v2.TodoService.AddTask \
+	    --data '{"description": "task"}' \
+	    --cacert ./certs/ca_cert.pem \
+	    --cname "check.test.example.com" \
+	    --metadata '{"auth_token": "authd"}' \
+	    $(srvaddr)
 
-.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest
+gcurl:
+	grpcurl -cacert ./certs/ca_cert.pem \
+	        -authority "check.test.example.com" \
+	        -reflect-header 'auth_token: authd' \
+	        $(srvaddr) $(args)
+
+gcurld:
+	grpcurl -cacert ./certs/ca_cert.pem \
+	        -authority "check.test.example.com" \
+	        -reflect-header 'auth_token: authd' \
+	        -rpc-header 'auth_token: authd' \
+	        -d $(data) \
+	        $(srvaddr) $(args)
+
+.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest gcurl gcurld

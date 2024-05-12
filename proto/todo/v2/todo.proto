@@ -21,7 +21,8 @@ message AddTaskRequest {
     ];
 
     google.protobuf.Timestamp due_date = 2 [
-        (validate.rules).timestamp.gt_now = true
+        (validate.rules).timestamp.gt_now = true,
+        (validate.rules).timestamp.required = true
     ];
 }
 
