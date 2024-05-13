@@ -25,6 +25,7 @@ COPY --from=protoc /usr/local/include/google /usr/local/include/google
 RUN go env -w GOPROXY=https://goproxy.io,direct
 RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+RUN go install github.com/envoyproxy/protoc-gen-validate@latest
 
 # copy proto files into /go/src/proto
 WORKDIR /go/src/proto
@@ -33,10 +34,12 @@ COPY ./proto .
 # generate code out of proto files
 WORKDIR /go
 ENV MODULE=zgrpc-go-professionals
-RUN protoc --go_out=src \
+RUN protoc --proto_path=src/proto \
+           --go_out=src \
            --go_opt=module=$MODULE \
            --go-grpc_out=src \
            --go-grpc_opt=module=$MODULE \
+           --validate_out="lang=go,module=$MODULE:src" \
            src/proto/todo/v2/*.proto
 
 # copy code into /go/src/server
@@ -50,7 +53,7 @@ COPY go.mod .
 # download dependencies and build
 RUN go mod tidy
 WORKDIR /go/src/server
-RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /go/bin/app
+RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-s -w" -o /go/bin/server
 
 FROM scratch
 
@@ -59,6 +62,6 @@ COPY ./certs/server_cert.pem ./certs/server_cert.pem
 COPY ./certs/server_key.pem ./certs/server_key.pem
 
 # copy the previously built binary into smaller image
-COPY --from=build /go/bin/app /
-EXPOSE 50051
-CMD ["/app", "0.0.0.0:50051"]
+COPY --from=build /go/bin/server /
+EXPOSE 50051 5002
+CMD ["/server", "0.0.0.0:50051", "0.0.0.0:50052"]

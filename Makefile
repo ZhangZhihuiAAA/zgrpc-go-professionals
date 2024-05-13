@@ -6,29 +6,30 @@ protocv1:
 	       proto/todo/v1/*.proto
 
 importdir=proto
-module=zgrpc-go-professionals/pb
-outdir=pb
+module=zgrpc-go-professionals
 protoc:
 	protoc --proto_path=$(importdir) \
-	       --go_out=$(outdir) \
+	       --go_out=. \
 	       --go_opt=module=$(module) \
-	       --go-grpc_out=$(outdir) \
+	       --go-grpc_out=. \
 	       --go-grpc_opt=module=$(module) \
-	       --validate_out="lang=go,module=$(module):$(outdir)" \
+	       --validate_out="lang=go,module=$(module):." \
 	       proto/todo/v2/*.proto
 
 srvaddr=0.0.0.0:50051
 metricsaddr=0.0.0.0:50052
 runs:
 	go run ./server $(srvaddr) $(metricsaddr)
+runs_grpclogson:
+	GRPC_GO_LOG_SEVERITY_LEVEL=info go run ./server $(srvaddr) $(metricsaddr)
 runc:
 	go run ./client $(srvaddr)
 
 dbuilds:
-	docker build -t zgrpc-go-professionals:server -f server.dockerfile .
+	docker build --no-cache -t zgrpc-go-professionals:server -f server.dockerfile .
 
 dbuildc:
-	docker build -t zgrpc-go-professionals:client -f client.dockerfile .
+	docker build --no-cache -t zgrpc-go-professionals:client -f client.dockerfile .
 
 kloads:
 	kind load docker-image zgrpc-go-professionals:server
@@ -74,4 +75,4 @@ gcurld:
 	        -d $(data) \
 	        $(srvaddr) $(args)
 
-.PHONY: protocv1 protoc runs runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest gcurl gcurld
+.PHONY: protocv1 protoc runs runs_grpclogson runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest gcurl gcurld
