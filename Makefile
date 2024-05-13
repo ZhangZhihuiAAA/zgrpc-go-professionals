@@ -31,11 +31,17 @@ dbuilds:
 dbuildc:
 	docker build --no-cache -t zgrpc-go-professionals:client -f client.dockerfile .
 
+dbuilde:
+	docker build --no-cache -t zgrpc-go-professionals:envoy-proxy -f envoy.dockerfile .
+
 kloads:
 	kind load docker-image zgrpc-go-professionals:server
 
 kloadc:
 	kind load docker-image zgrpc-go-professionals:client
+
+kloade:
+	kind load docker-image zgrpc-go-professionals:envoy-proxy
 
 kapplys:
 	kubectl apply -f k8s/server.yaml
@@ -43,8 +49,13 @@ kapplys:
 kapplyc:
 	kubectl apply -f k8s/client.yaml
 
+kapplye:
+	kubectl apply -f envoy/service.yaml
+	kubectl apply -f envoy/deployment.yaml
+
 kcreatec:
 	kind create cluster --config k8s/kind.yaml -v
+
 kdeletec:
 	kind delete cluster
 
@@ -75,4 +86,6 @@ gcurld:
 	        -d $(data) \
 	        $(srvaddr) $(args)
 
-.PHONY: protocv1 protoc runs runs_grpclogson runc dbuilds dbuildc kloads kloadc kapplys kapplyc kcreatec kdeletec utest ltest gcurl gcurld
+.PHONY: protocv1 protoc runs runs_grpclogson runc dbuilds dbuildc dbuilde \
+	    kloads kloadc kloade kapplys kapplyc kapplye kcreatec kdeletec \
+	    utest ltest gcurl gcurld
